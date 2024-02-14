@@ -2,6 +2,7 @@ const userDetails = require("../models/userDetails");
 const userOTP = require("../models/userOTP");
 const bcrypt = require("bcrypt");
 const nodeMailer = require("nodemailer");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const transporter = nodeMailer.createTransport({
@@ -11,6 +12,11 @@ const transporter = nodeMailer.createTransport({
     pass: process.env.PASSWORD,
   },
 });
+
+maxAge = 3 * 24 * 60 * 60;
+const createToken = (id) => {
+  return jwt.sign({ id }, process.env.ACCESS_TOKEN, { expiresIn: maxAge });
+};
 
 let obj = {
   signUp: async (req, res) => {
@@ -27,9 +33,22 @@ let obj = {
           password: hashedPass,
         });
         await newUser.save();
+
+        const Token = createToken(newUser._id);
+        res.cookie("jwt", Token, {
+          httponly: true,
+          maxAge: maxAge * 1000,
+          secure: true,
+        });
+        console.log("userController:",Token)
+        
         return res
           .status(200)
-          .json({ message: "User registered successfully" });
+          .json({
+            user: newUser._id,
+            message: "User registered successfully",
+            Token,
+          });
       } else {
         return res
           .status(400)
@@ -129,7 +148,7 @@ let obj = {
       const otpPass = await userOTP.findOne({ OTP: otp });
 
       if (otpPass) {
-        await userOTP.findOneAndUpdate({ OTP: otp },{$unset:{OTP:""}});
+        await userOTP.findOneAndUpdate({ OTP: otp }, { $unset: { OTP: "" } });
         return res.status(200).json({ message: "Correct OTP" });
       } else {
         return res.status(400).json({ message: "Incorrect otp" });
@@ -138,9 +157,9 @@ let obj = {
       res.status(500).json({ error: "Invalid OTP details", err });
     }
   },
-  resetPass:async(req,res)=>{
-     const{password}=req.body
-  }
+  resetPass: async (req, res) => {
+    const { password } = req.body;
+  },
 };
 
 module.exports = obj;
