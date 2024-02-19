@@ -1,11 +1,14 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const schema = mongoose.Schema;
+const Schema = mongoose.Schema;
 
-const userOTP = new schema({
+const userOTP = new Schema({
   email: {
     type: String,
     required: true,
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
   },
   OTP: {
     type: String,
@@ -13,6 +16,4 @@ const userOTP = new schema({
   },
 });
 
-module.exports = mongoose.model("userOTP", userOTP);
-
-
+module.exports = mongoose.model('userOTP', userOTP);
