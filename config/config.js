@@ -1,14 +1,6 @@
-const mongoose = require("mongoose");
-require('dotenv').config()
+const mongoose = require('mongoose');
 
 const connect = mongoose
-  .connect(process.env.MONGO_URL)
-  .then(() => {
-    console.log("mongo is started");
-  })
-  .catch((err) => {
-    console.log("mongo connection error:",err);
-    process.exit(1);
-  });
+    .connect(process.env.MONGO_URL);
 module.exports = connect;
 

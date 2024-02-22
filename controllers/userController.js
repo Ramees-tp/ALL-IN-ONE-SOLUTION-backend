@@ -7,6 +7,8 @@ const userDetails = require('../models/userDetails');
 const addDetails = require('../models/userMoreDetails');
 require('dotenv').config();
 
+const {default: mongoose} = require('mongoose');
+
 const transporter = nodeMailer.createTransport({
   service: 'gmail',
   auth: {
@@ -98,8 +100,9 @@ const obj = {
         }
 
         const OTP = Math.floor(100000 + Math.random() * 900000);
+        console.log(`otp:${OTP}`);
         const existMail = await UserOTP.findOne({email});
-        console.log(existMail);
+
         if (existMail) {
           const updateData = await UserOTP.findByIdAndUpdate(
               {_id: existMail._id},
@@ -116,10 +119,11 @@ const obj = {
           };
           transporter.sendMail(mail, (error, info) => {
             if (error) {
-              res.status(400).json({error: 'email not send'});
+              console.error('Error sending email:', error);
+              res.status(400).json({error: 'Email not sent'});
             } else {
-              console.log('email send', info.response);
-              res.status(200).json({message: 'success'});
+              console.log('Email sent:', info.response);
+              res.status(200).json({message: 'Email sent successfully'});
             }
           });
         } else {
@@ -138,10 +142,11 @@ const obj = {
           };
           transporter.sendMail(mail, (error, info) => {
             if (error) {
-              res.status(400).json({error: 'email not send'});
+              console.error('Error sending email:', error);
+              res.status(400).json({error: 'Email not sent'});
             } else {
-              console.log('email send', info.response);
-              res.status(200).json({message: 'success'});
+              console.log('Email sent:', info.response);
+              res.status(200).json({message: 'Email sent successfully'});
             }
           });
         }
@@ -152,6 +157,7 @@ const obj = {
       res.status(400).json({error: 'ivalid details', err});
     }
   },
+  // function to
   verifyOTP: async (req, res) => {
     const {verificationId, otpValues} = req.body;
     const otp = parseInt(otpValues.join(''), 10);
@@ -205,7 +211,7 @@ const obj = {
 
       const user = await userDetails.findOne({_id: userID});
       if (user) {
-        const updateProfile = await addDetails.updateOne(
+        await addDetails.updateOne(
             {userId: userID},
             {
               $set: {
@@ -231,16 +237,30 @@ const obj = {
     }
     console.log(req.body);
   },
-  userProfile: async (req, res)=>{
-    const Token=await req.headers.authorization.split(' ')[1];
+  userProfile: async (req, res) => {
+    const Token = await req.headers.authorization.split(' ')[1];
     try {
-      const decodedToken=jwt.verify(Token, process.env.ACCESS_TOKEN);
-      userID=decodedToken.id;
+      const decodedToken = jwt.verify(Token, process.env.ACCESS_TOKEN);
+      userID = decodedToken.id;
       const userData = await userDetails.findOne({_id: userID});
       if (!userData) {
-        return res.status( 400).json({message: 'no user found'});
+        return res.status(400).json({message: 'no user found'});
       }
-      return res.status(200).json({userData, message: 'sending user details'})
+      const fullData = await userDetails.aggregate([
+        {$match: {_id: new mongoose.Types.ObjectId(userID)}},
+        {
+          $lookup: {
+            from: 'userMoreDetails',
+            localField: '_id',
+            foreignField: 'userId',
+            as: 'moredetails',
+          },
+        },
+      ]);
+      console.log(fullData);
+      return res
+          .status(200)
+          .json({fullData, message: 'sending user details'});
     } catch (err) {
       console.log('Error decoding token', err);
       res.status(401).json({error: 'invalid or expired token'});

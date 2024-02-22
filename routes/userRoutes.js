@@ -16,7 +16,7 @@ router.post('/login', login);
 router.post('/userOTP', userOTP);
 router.post('/verifyOTP', verifyOTP);
 router.post('/resetPass', resetPass);
-router.patch('/addDetails', addDetails);
+router.put('/addDetails', addDetails);
 router.get('/userProfile', userProfile);
 
 module.exports = router;
