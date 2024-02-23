@@ -3,6 +3,7 @@ const app = express();
 const port = 917;
 const userRouter = require('./routes/userRoutes');
 const workerRouter=require('./routes/workerRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const mongConnect = require('./config/config');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -16,6 +17,7 @@ app.use(cors({origin: ['http://localhost:5173'], credentials: true}));
 
 app.use('/user', userRouter);
 app.use('/worker', workerRouter);
+app.use('/master', adminRoutes);
 
 mongConnect.then(() => {
   app.listen(port, () => {
