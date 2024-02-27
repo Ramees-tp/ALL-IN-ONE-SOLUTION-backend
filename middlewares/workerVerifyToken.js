@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 const authenticateToken = async (req, res, next) => {
-  const token = req.headers['authorization'];
+  const token = req.headers['workerauth'];
   console.log(`Token:${token}`);
   if (!token) {
     return res.status(401).json({error: 'Authorization header missing'});
@@ -18,8 +18,8 @@ const authenticateToken = async (req, res, next) => {
       return res.status(401).json({error: 'Invalid token'});
     }
 
-    req.decodedToken = decodedToken;
-    console.log(req.decodedToken);
+    req.decodedWorkerToken = decodedToken;
+    console.log(req.decodedWorkerToken);
     next();
   } catch (error) {
     console.error('Error verifying token:', error.message);

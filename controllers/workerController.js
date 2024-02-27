@@ -1,5 +1,12 @@
 const WorkerDetails = require('../models/workerRegistration');
 const bcrypt = require('bcrypt');
+require('dotenv').config();
+const jwt = require('jsonwebtoken');
+
+maxAge = 3 * 24 * 60 * 60;
+const createToken = (id) => {
+  return jwt.sign({id}, process.env.ACCESS_TOKEN_WORKER, {expiresIn: maxAge});
+};
 
 const obj = {
   registration: async (req, res) => {
@@ -51,12 +58,37 @@ const obj = {
         });
         await newWorker.save();
 
-        return res.status(200).json({message: 'worker registration success'});
+        const Token = createToken(newWorker._id);
+        res.cookie('wjwt', Token, {
+          httponly: true,
+          maxAge: maxAge * 1000,
+          secure: true,
+        });
+        console.log('workerController:', Token);
+
+        return res
+            .status(200)
+            .json({message: 'worker registration success', Token});
       }
     } catch (error) {
       console.error('Error during signUp:', error);
       res.status(500).json({message: 'Internal server error'});
     }
+  },
+  workerProfile: async (req, res)=>{
+    try {
+      const workerDetails = await WorkerDetails.findOne({_id});
+      res.
+          status(200)
+          .json({data: workerDetails, message: 'data fetched successfully'});
+    } catch (err) {
+      res.
+          status(500)
+          .json({message: 'internal server error'});
+    }
+  },
+  updateDetails: async (req, res)=>{
+    const {} =req.body;
   },
 };
 

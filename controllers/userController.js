@@ -1,21 +1,15 @@
+const WorkerDetails = require('../models/workerRegistration');
 const UserDetails = require('../models/userDetails');
 const UserOTP = require('../models/userOTP');
+const AddDetails = require('../models/userMoreDetails');
+const JobForm =require('../models/workSchema');
 const bcrypt = require('bcrypt');
-const nodeMailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
-const userDetails = require('../models/userDetails');
-const addDetails = require('../models/userMoreDetails');
+
+const sendEmail = require('../utils/nodemailer');
 require('dotenv').config();
 
 const {default: mongoose} = require('mongoose');
-
-const transporter = nodeMailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL,
-    pass: process.env.PASSWORD,
-  },
-});
 
 maxAge = 3 * 24 * 60 * 60;
 const createToken = (id) => {
@@ -79,18 +73,18 @@ const obj = {
         }
       } else {
         return res
-            .status(400)
-            .json({message: 'User with this Username don\'t exists'});
+            .status(404)
+            .json({message: 'User with this Username dont exist'});
       }
-    } catch (err) {}
+    } catch (err) {
+      res.status(500).json({error: 'ivalid details', err});
+    }
   },
   userOTP: async (req, res) => {
     const {email} = req.body;
-    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = req.decodedToken
 
     try {
-      const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN);
-      console.log(`decoded : ${JSON.stringify(decodedToken)}`);
       const userid = decodedToken.id;
 
       const existUser = await UserDetails.findOne({_id: userid});
@@ -100,7 +94,6 @@ const obj = {
         }
 
         const OTP = Math.floor(100000 + Math.random() * 900000);
-        console.log(`otp:${OTP}`);
         const existMail = await UserOTP.findOne({email});
 
         if (existMail) {
@@ -111,21 +104,19 @@ const obj = {
           );
           await updateData.save();
 
-          const mail = {
-            from: process.env.EMAIL,
-            to: email,
-            subject: 'sending OTP for authentication',
-            text: `OTP:${OTP}`,
-          };
-          transporter.sendMail(mail, (error, info) => {
-            if (error) {
-              console.error('Error sending email:', error);
-              res.status(400).json({error: 'Email not sent'});
-            } else {
-              console.log('Email sent:', info.response);
-              res.status(200).json({message: 'Email sent successfully'});
-            }
-          });
+          const sendMail = await sendEmail(
+              email,
+              'sending email for authentication',
+              `OTP:${OTP}`,
+          );
+
+          if (!sendMail) {
+            return res.status(400).json({message: 'Sending Email failed'});
+          } else {
+            return res
+                .status(200)
+                .json({message: 'Email with OTP dispatched'});
+          }
         } else {
           const saveNew = new UserOTP({
             userId: existUser._id,
@@ -134,21 +125,19 @@ const obj = {
           });
           await saveNew.save();
 
-          const mail = {
-            from: process.env.EMAIL,
-            to: email,
-            subject: 'sending email for authentication',
-            text: `OTP:${OTP}`,
-          };
-          transporter.sendMail(mail, (error, info) => {
-            if (error) {
-              console.error('Error sending email:', error);
-              res.status(400).json({error: 'Email not sent'});
-            } else {
-              console.log('Email sent:', info.response);
-              res.status(200).json({message: 'Email sent successfully'});
-            }
-          });
+          const sendMail = await sendEmail(
+              email,
+              'sending email for authentication',
+              `OTP:${OTP}`,
+          );
+
+          if (!sendMail) {
+            return res.status(400).json({message: 'Sending Email failed'});
+          } else {
+            return res
+                .status(200)
+                .json({message: 'Email with OTP dispatched'});
+          }
         }
       } else {
         res.status(400).json({error: 'user with this email not exist'});
@@ -159,7 +148,7 @@ const obj = {
   },
   // function to
   verifyOTP: async (req, res) => {
-    const {verificationId, otpValues} = req.body;
+    const {otpValues} = req.body;
     const otp = parseInt(otpValues.join(''), 10);
     try {
       const otpPass = await UserOTP.findOne({OTP: otp});
@@ -177,10 +166,10 @@ const obj = {
   resetPass: async (req, res) => {
     const {password} = req.body;
 
-    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = req.decodedToken;
     try {
-      const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN);
-      console.log(`decoded : ${JSON.stringify(decodedToken)}`);
+      // const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN);
+      // console.log(`decoded : ${JSON.stringify(decodedToken)}`);
       const userid = decodedToken.id;
 
       const user = await UserDetails.findOne({_id: userid});
@@ -202,16 +191,16 @@ const obj = {
     }
   },
   addDetails: async (req, res) => {
-    const {firstName, lastName, DOB, phoneNumber, street, district, pinCode} =
+    const {firstName, lastName, DOB, phoneNumber, city, district, pinCode} =
       req.body;
     const Token = req.headers.authorization.split(' ')[1];
     try {
       const decodedToken = jwt.verify(Token, process.env.ACCESS_TOKEN);
       const userID = decodedToken.id;
 
-      const user = await userDetails.findOne({_id: userID});
+      const user = await UserDetails.findOne({_id: userID});
       if (user) {
-        await addDetails.updateOne(
+        await AddDetails.updateOne(
             {userId: userID},
             {
               $set: {
@@ -219,7 +208,7 @@ const obj = {
                 lastName,
                 DOB,
                 phoneNumber,
-                street,
+                city,
                 district,
                 pinCode,
               },
@@ -235,18 +224,17 @@ const obj = {
       res.status(401).json({error: 'Invalid or expired token'});
       return;
     }
-    console.log(req.body);
   },
   userProfile: async (req, res) => {
     const Token = await req.headers.authorization.split(' ')[1];
     try {
       const decodedToken = jwt.verify(Token, process.env.ACCESS_TOKEN);
       userID = decodedToken.id;
-      const userData = await userDetails.findOne({_id: userID});
+      const userData = await UserDetails.findOne({_id: userID});
       if (!userData) {
         return res.status(400).json({message: 'no user found'});
       }
-      const fullData = await userDetails.aggregate([
+      const fullData = await UserDetails.aggregate([
         {$match: {_id: new mongoose.Types.ObjectId(userID)}},
         {
           $lookup: {
@@ -264,6 +252,56 @@ const obj = {
     } catch (err) {
       console.log('Error decoding token', err);
       res.status(401).json({error: 'invalid or expired token'});
+    }
+  },
+  awailWorker: async (req, res)=>{
+    const id = req.params.id;
+    const workType = await JobForm.findOne({_id: id});
+    const job =workType.jobName;
+    try {
+      const awailWorker = await WorkerDetails.find({jobType: job});
+      console.log(awailWorker);
+      if (!awailWorker) {
+        return res.status(404).json({message: 'No worker found in Your City'});
+      }
+      return res
+          .status(200)
+          .json({data: awailWorker, message: 'fetching data success'});
+    } catch (err) {
+      res.
+          status(500)
+          .json({message: 'internal server error'});
+    }
+  },
+  userhome: async (req, res)=>{
+    try {
+      const jobData = await JobForm.find();
+      return res
+          .status(200)
+          .json({data: jobData, message: 'job data fetching success'});
+    } catch (err) {
+      res.
+          status(500)
+          .json({message: 'internal server error'});
+    }
+  },
+  userlocation: async (req, res)=>{
+    const decodedToken = req.decodedToken;
+    try {
+      const userId = decodedToken.id;
+      console.log('userId:', userId);
+
+      const user = await AddDetails.findOne({userId: userId});
+      const userLocation = user.city;
+      console.log('location', userLocation);
+
+      return res
+          .status(200)
+          .json({data: userLocation, message: 'location fetch success'});
+    } catch (err) {
+      res.
+          status(500)
+          .json({message: 'backend server error'});
     }
   },
 };

@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const Schema = mongoose.Schema;
 
@@ -27,13 +27,13 @@ const userMoreDetails = new Schema({
     required: true,
   },
 
-  street: { type: String, required: true },
-  district: { type: String, required: true },
-  pinCode: { type: String, required: true },
+  city: {type: String, required: true},
+  district: {type: String, required: true},
+  pinCode: {type: String, required: true},
 
   photo: {
     type: String,
   },
 });
 
-module.exports = mongoose.model("userMoreDetails", userMoreDetails);
+module.exports = mongoose.model('userMoreDetails', userMoreDetails);
