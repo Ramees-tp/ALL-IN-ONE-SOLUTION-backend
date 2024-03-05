@@ -1,4 +1,5 @@
 const WorkerDetails = require('../models/workerRegistration');
+const WorkRequest = require('../models/workRequests');
 const bcrypt = require('bcrypt');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
@@ -22,6 +23,7 @@ const obj = {
       pinCode,
       jobType,
       workArea,
+      coordinates,
       adharNumber,
       IFC,
       accountNumber,
@@ -50,6 +52,7 @@ const obj = {
           pinCode,
           jobType,
           workArea,
+          coordinates,
           adharNumber,
           IFC,
           accountNumber,
@@ -76,20 +79,38 @@ const obj = {
     }
   },
   workerProfile: async (req, res)=>{
+    const Token = await req.headers.authorization.split(' ')[1];
     try {
-      const workerDetails = await WorkerDetails.findOne({_id});
-      res.
-          status(200)
-          .json({data: workerDetails, message: 'data fetched successfully'});
+      const decodedToken = jwt.verify(Token, process.env.ACCESS_TOKEN_WORKER);
+      workerID = decodedToken.id;
+      const workerData = await WorkerDetails.findOne({_id: workerID});
+      if (!workerData) {
+        return res.status(400).json({message: 'no worker found'});
+      }
+      return res
+          .status(200)
+          .json({dat: workerData, message: 'fetching worker details positive'});
     } catch (err) {
-      res.
-          status(500)
-          .json({message: 'internal server error'});
+      console.log('Error decoding token', err);
+      res.status(401).json({error: 'invalid or expired token'});
     }
   },
   updateDetails: async (req, res)=>{
     const {} =req.body;
   },
+  workRequest: async (req, res)=> {
+    const decodedToken = req.decodedToken;
+    const workerId = decodedToken.id;
+    try {
+      const requests = await WorkRequest
+          .find({workerId}).populate('userId', 'name');
+      res.json(requests);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({message: 'Server Error'});
+    }
+  },
+
 };
 
 module.exports= obj;

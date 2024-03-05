@@ -3,6 +3,8 @@ const UserDetails = require('../models/userDetails');
 const UserOTP = require('../models/userOTP');
 const AddDetails = require('../models/userMoreDetails');
 const JobForm =require('../models/workSchema');
+const WorkRequest = require('../models/workRequests');
+
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -82,7 +84,7 @@ const obj = {
   },
   userOTP: async (req, res) => {
     const {email} = req.body;
-    const decodedToken = req.decodedToken
+    const decodedToken = req.decodedToken;
 
     try {
       const userid = decodedToken.id;
@@ -146,7 +148,6 @@ const obj = {
       res.status(400).json({error: 'ivalid details', err});
     }
   },
-  // function to
   verifyOTP: async (req, res) => {
     const {otpValues} = req.body;
     const otp = parseInt(otpValues.join(''), 10);
@@ -238,7 +239,7 @@ const obj = {
         {$match: {_id: new mongoose.Types.ObjectId(userID)}},
         {
           $lookup: {
-            from: 'userMoreDetails',
+            from: 'usermoredetails',
             localField: '_id',
             foreignField: 'userId',
             as: 'moredetails',
@@ -259,7 +260,8 @@ const obj = {
     const workType = await JobForm.findOne({_id: id});
     const job =workType.jobName;
     try {
-      const awailWorker = await WorkerDetails.find({jobType: job});
+      const awailWorker =
+       await WorkerDetails.find({jobType: job, isApproved: true});
       console.log(awailWorker);
       if (!awailWorker) {
         return res.status(404).json({message: 'No worker found in Your City'});
@@ -271,6 +273,36 @@ const obj = {
       res.
           status(500)
           .json({message: 'internal server error'});
+    }
+  },
+  workerDetails: async (req, res) =>{
+    workerId = req.params.id;
+    console.log( 'details :', workerId);
+    try {
+      const worker = await WorkerDetails.find({_id: workerId});
+      if (!worker) {
+        return res.status(404).json({message: 'worker not found'});
+      }
+      res.status(200).json({data: worker, message: 'worker data success'});
+    } catch (err) {
+      res.
+          status(500)
+          .json({message: 'back: internal server error'});
+    }
+  },
+  workRequest: async (req, res) => {
+    const workerId = req.params.id;
+    const decodedToken = req.decodedToken;
+    const userId = decodedToken.id;
+    try {
+      const request = await WorkRequest.create({
+        workerId,
+        userId,
+      });
+      return res.status(201).json({request, message: 'request sended'});
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({message: 'Server Error'});
     }
   },
   userhome: async (req, res)=>{
@@ -302,6 +334,36 @@ const obj = {
       res.
           status(500)
           .json({message: 'backend server error'});
+    }
+  },
+  newlocation: async (req, res)=>{
+    const location = req.query.location;
+    try {
+      const filteredData = await
+      WorkerDetails.find({city: {$regex: new RegExp(location, 'i')}});
+      res.status(200).json({data: filteredData, message: 'mission success'});
+    } catch (err) {
+      res.status(500).json({message: 'Backend server error'});
+    }
+  },
+  fetchWorker: async (req, res)=>{
+    try {
+      const {latitude, longitude} = req.query;
+      const workers = await WorkerDetails.find({
+        location: {
+          $near: {
+            $geometry: {
+              type: 'Point',
+              coordinates: [parseFloat(longitude), parseFloat(latitude)],
+            },
+            $maxDistance: 5*1000,
+          },
+        },
+      });
+      res.status(200).json({workers, message: 'fetching worker list success'});
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({error: 'Internal Server Error'});
     }
   },
 };

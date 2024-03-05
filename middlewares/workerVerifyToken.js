@@ -11,7 +11,7 @@ const authenticateToken = async (req, res, next) => {
     const tokenWithoutBearer = token.split(' ')[1];
     const decodedToken = jwt.verify(
         tokenWithoutBearer,
-        process.env.ACCESS_TOKEN,
+        process.env.ACCESS_TOKEN_WORKER,
     );
     console.log(`tok${decodedToken}`);
     if (!decodedToken) {

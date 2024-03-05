@@ -26,11 +26,22 @@ const userMoreDetails = new Schema({
     type: String,
     required: true,
   },
-
-  city: {type: String, required: true},
-  district: {type: String, required: true},
-  pinCode: {type: String, required: true},
-
+  city: {
+    type: String,
+    required: true,
+  },
+  district: {
+    type: String,
+    required: true,
+  },
+  pinCode: {
+    type: String,
+    required: true,
+  },
+  location: {
+    type: {type: String},
+    coordinates: [Number],
+  },
   photo: {
     type: String,
   },

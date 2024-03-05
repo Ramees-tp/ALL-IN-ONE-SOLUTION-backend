@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const workerRegistration = new Schema({
@@ -66,10 +66,15 @@ const workerRegistration = new Schema({
     type: String,
     required: true,
   },
+  coordinates: {
+    type: [Number],
+    index: '2dsphere',
+    required: true,
+  },
   isApproved: {
     type: Boolean,
     default: false,
   },
 });
 
-module.exports = mongoose.model("workerDetails", workerRegistration);
+module.exports = mongoose.model('workerDetails', workerRegistration);
