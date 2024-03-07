@@ -23,13 +23,19 @@ const obj = {
       pinCode,
       jobType,
       workArea,
-      coordinates,
       adharNumber,
       IFC,
       accountNumber,
       panCardNumber,
       password,
     } = req.body;
+    const [longitude, latitude] = req.body.coordinates.split(',').map(Number);
+
+    if (!req.file || !req.file.location) {
+      return res.status(400).json({error: 'Invalid file uploaded'});
+    }
+    const image = req.file.location;
+    console.log('Image uploaded successfully:', image);
     try {
       const existWorker = await WorkerDetails.findOne({email});
       if (existWorker) {
@@ -50,9 +56,10 @@ const obj = {
           district,
           city,
           pinCode,
+          profileImage: image,
           jobType,
           workArea,
-          coordinates,
+          coordinates: [longitude, latitude],
           adharNumber,
           IFC,
           accountNumber,
@@ -79,7 +86,7 @@ const obj = {
     }
   },
   workerProfile: async (req, res)=>{
-    const Token = await req.headers.authorization.split(' ')[1];
+    const Token = await req.headers.workerauth.split(' ')[1];
     try {
       const decodedToken = jwt.verify(Token, process.env.ACCESS_TOKEN_WORKER);
       workerID = decodedToken.id;
@@ -89,7 +96,8 @@ const obj = {
       }
       return res
           .status(200)
-          .json({dat: workerData, message: 'fetching worker details positive'});
+          .json({
+            data: workerData, message: 'fetching worker details positive'});
     } catch (err) {
       console.log('Error decoding token', err);
       res.status(401).json({error: 'invalid or expired token'});
@@ -99,11 +107,15 @@ const obj = {
     const {} =req.body;
   },
   workRequest: async (req, res)=> {
-    const decodedToken = req.decodedToken;
+    const Token = await req.headers.workerauth.split(' ')[1];
+    const decodedToken = jwt.verify(Token, process.env.ACCESS_TOKEN_WORKER);
     const workerId = decodedToken.id;
     try {
       const requests = await WorkRequest
-          .find({workerId}).populate('userId', 'name');
+          .find({workerId})
+          .populate({
+            path: 'userId', select: 'firstName lastName profileImage',
+          });
       res.json(requests);
     } catch (error) {
       console.error(error);

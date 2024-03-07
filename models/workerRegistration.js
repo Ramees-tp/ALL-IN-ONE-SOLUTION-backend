@@ -38,6 +38,9 @@ const workerRegistration = new Schema({
     type: Number,
     required: true,
   },
+  profileImage: {
+    type: String,
+  },
   jobType: {
     type: String,
     required: true,

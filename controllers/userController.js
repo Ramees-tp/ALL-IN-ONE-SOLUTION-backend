@@ -169,8 +169,6 @@ const obj = {
 
     const decodedToken = req.decodedToken;
     try {
-      // const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN);
-      // console.log(`decoded : ${JSON.stringify(decodedToken)}`);
       const userid = decodedToken.id;
 
       const user = await UserDetails.findOne({_id: userid});
@@ -192,9 +190,18 @@ const obj = {
     }
   },
   addDetails: async (req, res) => {
-    const {firstName, lastName, DOB, phoneNumber, city, district, pinCode} =
-      req.body;
-    const Token = req.headers.authorization.split(' ')[1];
+    const {
+      firstName,
+      lastName,
+      DOB,
+      phoneNumber,
+      city,
+      coordinates,
+      district,
+      pinCode} = req.body;
+
+    const Token = await req.headers.authorization.split(' ')[1];
+    console.log('deatailToken', Token);
     try {
       const decodedToken = jwt.verify(Token, process.env.ACCESS_TOKEN);
       const userID = decodedToken.id;
@@ -210,6 +217,7 @@ const obj = {
                 DOB,
                 phoneNumber,
                 city,
+                coordinates,
                 district,
                 pinCode,
               },
@@ -255,29 +263,9 @@ const obj = {
       res.status(401).json({error: 'invalid or expired token'});
     }
   },
-  awailWorker: async (req, res)=>{
-    const id = req.params.id;
-    const workType = await JobForm.findOne({_id: id});
-    const job =workType.jobName;
-    try {
-      const awailWorker =
-       await WorkerDetails.find({jobType: job, isApproved: true});
-      console.log(awailWorker);
-      if (!awailWorker) {
-        return res.status(404).json({message: 'No worker found in Your City'});
-      }
-      return res
-          .status(200)
-          .json({data: awailWorker, message: 'fetching data success'});
-    } catch (err) {
-      res.
-          status(500)
-          .json({message: 'internal server error'});
-    }
-  },
+
   workerDetails: async (req, res) =>{
     workerId = req.params.id;
-    console.log( 'details :', workerId);
     try {
       const worker = await WorkerDetails.find({_id: workerId});
       if (!worker) {
@@ -321,15 +309,19 @@ const obj = {
     const decodedToken = req.decodedToken;
     try {
       const userId = decodedToken.id;
-      console.log('userId:', userId);
+      console.log('loc_userId:', userId);
 
       const user = await AddDetails.findOne({userId: userId});
       const userLocation = user.city;
+      const userCoordinates = user.coordinates;
       console.log('location', userLocation);
 
       return res
           .status(200)
-          .json({data: userLocation, message: 'location fetch success'});
+          .json({
+            data: userLocation,
+            latlong: userCoordinates,
+            message: 'location fetch success'});
     } catch (err) {
       res.
           status(500)
@@ -346,21 +338,47 @@ const obj = {
       res.status(500).json({message: 'Backend server error'});
     }
   },
-  fetchWorker: async (req, res)=>{
+  awailWorker: async (req, res)=>{
+    const id = req.params.id;
+    const workType = await JobForm.findOne({_id: id});
+    const job =workType.jobName;
     try {
-      const {latitude, longitude} = req.query;
+      const awailWorker =
+       await WorkerDetails.find({jobType: job, isApproved: true});
+      console.log(awailWorker);
+      if (!awailWorker) {
+        return res.status(404).json({message: 'No worker found in Your City'});
+      }
+      return res
+          .status(200)
+          .json({data: awailWorker, message: 'fetching data success'});
+    } catch (err) {
+      res.
+          status(500)
+          .json({message: 'internal server error'});
+    }
+  },
+  fetchWorker: async (req, res)=>{
+    const {latitude, longitude} = req.query;
+    const id = req.params.id;
+    const workType = await JobForm.findOne({_id: id});
+    const job =workType.jobName;
+    try {
       const workers = await WorkerDetails.find({
-        location: {
+        jobType: job,
+        isApproved: true,
+        coordinates: {
           $near: {
             $geometry: {
               type: 'Point',
               coordinates: [parseFloat(longitude), parseFloat(latitude)],
             },
-            $maxDistance: 5*1000,
+            $maxDistance: 10*1000,
           },
         },
       });
-      res.status(200).json({workers, message: 'fetching worker list success'});
+      res.status(200)
+          .json({data: workers, message: 'fetching worker list success'});
     } catch (error) {
       console.error(error);
       res.status(500).json({error: 'Internal Server Error'});

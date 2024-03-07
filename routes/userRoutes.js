@@ -33,6 +33,6 @@ router.get('/userlocation', verifyToken, userlocation);
 router.get('/newlocation', verifyToken, newlocation);
 router.post('/workRequest/:id', workRequest);
 
-router.get('/fetchWorker', fetchWorker);
+router.get('/fetchWorker/:id', fetchWorker);
 
 module.exports = router;

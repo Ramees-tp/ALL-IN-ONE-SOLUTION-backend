@@ -30,6 +30,11 @@ const userMoreDetails = new Schema({
     type: String,
     required: true,
   },
+  coordinates: {
+    type: [Number],
+    index: '2dsphere',
+    required: true,
+  },
   district: {
     type: String,
     required: true,
@@ -37,10 +42,6 @@ const userMoreDetails = new Schema({
   pinCode: {
     type: String,
     required: true,
-  },
-  location: {
-    type: {type: String},
-    coordinates: [Number],
   },
   photo: {
     type: String,

@@ -1,4 +1,4 @@
-  require('dotenv').config();
+require('dotenv').config();
 const {S3Client} = require('@aws-sdk/client-s3');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
@@ -18,10 +18,13 @@ const upload = multer({
     s3: s3,
     bucket: myBucket,
     metadata: function(req, file, cb) {
-      cb(null, {filedName: file.filedname});
+      cb(null, {fieldName: file.fieldname});
     },
     key: function(req, file, cb) {
-      cb(null, `jobImage-${Date.now()}.jpeg`);
+      const fileType = file
+          .fieldname === 'profileImage' ? 'profileImage' : 'jobImage';
+      const timestamp = Date.now();
+      cb(null, `${fileType}-${timestamp}.jpeg`);
     },
   }),
 });
