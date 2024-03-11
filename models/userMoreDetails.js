@@ -28,12 +28,12 @@ const userMoreDetails = new Schema({
   },
   city: {
     type: String,
-    required: true,
+    // required: true,
   },
   coordinates: {
     type: [Number],
     index: '2dsphere',
-    required: true,
+    // required: true,
   },
   district: {
     type: String,
@@ -43,7 +43,7 @@ const userMoreDetails = new Schema({
     type: String,
     required: true,
   },
-  photo: {
+  userImage: {
     type: String,
   },
 });

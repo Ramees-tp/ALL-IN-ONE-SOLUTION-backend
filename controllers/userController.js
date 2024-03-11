@@ -13,7 +13,7 @@ require('dotenv').config();
 
 const {default: mongoose} = require('mongoose');
 
-maxAge = 3 * 24 * 60 * 60;
+maxAge = 7 * 24 * 60 * 60;
 const createToken = (id) => {
   return jwt.sign({id}, process.env.ACCESS_TOKEN, {expiresIn: maxAge});
 };
@@ -200,6 +200,12 @@ const obj = {
       district,
       pinCode} = req.body;
 
+    // if (!req.file || !req.file.location) {
+    //   return res.status(400).json({error: 'Invalid file uploaded'});
+    // }
+    // const image = req.file.location;
+    // console.log('Image uploaded successfully:', image);
+
     const Token = await req.headers.authorization.split(' ')[1];
     console.log('deatailToken', Token);
     try {
@@ -220,6 +226,7 @@ const obj = {
                 coordinates,
                 district,
                 pinCode,
+                // userImage: image,
               },
             },
             {upsert: true},
@@ -287,7 +294,7 @@ const obj = {
         workerId,
         userId,
       });
-      return res.status(201).json({request, message: 'request sended'});
+      return res.status(201).json({request, message: 'your request sended'});
     } catch (error) {
       console.error(error);
       res.status(500).json({message: 'Server Error'});

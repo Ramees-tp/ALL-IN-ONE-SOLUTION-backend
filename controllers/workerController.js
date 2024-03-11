@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 
-maxAge = 3 * 24 * 60 * 60;
+maxAge = 7 * 24 * 60 * 60;
 const createToken = (id) => {
   return jwt.sign({id}, process.env.ACCESS_TOKEN_WORKER, {expiresIn: maxAge});
 };

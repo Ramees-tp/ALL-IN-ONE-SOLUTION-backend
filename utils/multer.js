@@ -22,7 +22,8 @@ const upload = multer({
     },
     key: function(req, file, cb) {
       const fileType = file
-          .fieldname === 'profileImage' ? 'profileImage' : 'jobImage';
+          .fieldname === 'profileImage' ? 'profileImage' :
+           'jobImage' ? 'jobImage' : 'userImage';
       const timestamp = Date.now();
       cb(null, `${fileType}-${timestamp}.jpeg`);
     },
