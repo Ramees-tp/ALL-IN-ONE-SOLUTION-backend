@@ -3,16 +3,20 @@ const mongoose = require('mongoose');
 const requestSchema = new mongoose.Schema({
   workerId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Worker',
+    ref: 'workerDetails',
     required: true,
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'userDetails',
     required: true,
   },
   date: {
     type: Date,
+    required: true,
+  },
+  day: {
+    type: String,
     required: true,
   },
   status: {

@@ -1,8 +1,11 @@
+const UserDetails = require('../models/userDetails');
 const WorkerDetails = require('../models/workerRegistration');
 const WorkRequest = require('../models/workRequests');
 const bcrypt = require('bcrypt');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
+
+const {default: mongoose} = require('mongoose');
 
 maxAge = 7 * 24 * 60 * 60;
 const createToken = (id) => {
@@ -112,14 +115,45 @@ const obj = {
     const workerId = decodedToken.id;
     try {
       const requests = await WorkRequest
-          .find({workerId})
-          .populate({
-            path: 'userId', select: 'firstName lastName profileImage',
-          });
-      res.json(requests);
+          .find({workerId, status: 'pending'});
+      const userId = requests[0].userId._id;
+      const LookData = await UserDetails.aggregate([
+        {$match: {_id: new mongoose.Types.ObjectId(userId)}},
+        {
+          $lookup: {
+            from: 'usermoredetails',
+            localField: '_id',
+            foreignField: 'userId',
+            as: 'moredetails',
+          },
+        },
+      ]);
+      res.status(200).json({requests, LookData});
+      console.log('reqqqq', requests);
     } catch (error) {
       console.error(error);
-      res.status(500).json({message: 'Server Error'});
+      res.status(500).json({message: ' Server Error'});
+    }
+  },
+  acceptOrDecline: async (req, res) => {
+    const id = req.params.id;
+    const action = req.query.action;
+    console.log(action);
+    try {
+      const request = await WorkRequest.findById({_id: id});
+      if (!request) {
+        return res.status(404).json({message: 'Work request not found'});
+      }
+      if (action==='accept') {
+        request.status= 'accepted';
+      } else if (action === 'decline') {
+        request.status= 'declined';
+      }
+      await request.save();
+      res.status(200).json({message: 'Work request declined successfully'});
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({message: ' Server Error'});
     }
   },
 

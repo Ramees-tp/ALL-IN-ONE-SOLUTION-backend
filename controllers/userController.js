@@ -286,13 +286,17 @@ const obj = {
     }
   },
   workRequest: async (req, res) => {
+    const {selectedDate, selectedDay} =req.body;
     const workerId = req.params.id;
     const decodedToken = req.decodedToken;
     const userId = decodedToken.id;
     try {
+      const formattedDate = new Date(selectedDate).toISOString().split('T')[0];
       const request = await WorkRequest.create({
         workerId,
         userId,
+        date: formattedDate,
+        day: selectedDay,
       });
       return res.status(201).json({request, message: 'your request sended'});
     } catch (error) {
@@ -316,7 +320,6 @@ const obj = {
     const decodedToken = req.decodedToken;
     try {
       const userId = decodedToken.id;
-      console.log('loc_userId:', userId);
 
       const user = await AddDetails.findOne({userId: userId});
       const userLocation = user.city;
@@ -389,6 +392,40 @@ const obj = {
     } catch (error) {
       console.error(error);
       res.status(500).json({error: 'Internal Server Error'});
+    }
+  },
+  showRequests: async (req, res)=>{
+    const decodedToken = req.decodedToken;
+    try {
+      const userId = decodedToken.id;
+      const requests = await WorkRequest.find({userId}).populate('workerId');
+      res.status(200).json({success: true, requests});
+    } catch (err) {
+      console.error(err);
+      res.status(500)
+          .json({success: false, message: 'Internal server error'});
+    }
+  },
+  cancelRequest: async (req, res) =>{
+    const requestId = req.params.id;
+    console.log(requestId);
+    const decodedToken = req.decodedToken;
+    try {
+      const userId = decodedToken.id;
+      const request = await WorkRequest
+          .deleteOne({userId, _id: requestId});
+      if (request.deletedCount === 1) {
+        return res
+            .status(200)
+            .json({success: true, message: 'Request deleted successfully'});
+      } else {
+        return res
+            .status(404).json({success: false, message: 'Request not found'});
+      }
+    } catch (err) {
+      console.error(err);
+      res.status(500)
+          .json({success: false, message: 'Internal server error'});
     }
   },
 };

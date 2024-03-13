@@ -17,6 +17,8 @@ const {
   fetchWorker,
   workerDetails,
   workRequest,
+  showRequests,
+  cancelRequest,
 } = require('../controllers/userController');
 
 router.post('/signUp', signUp);
@@ -32,8 +34,10 @@ router.get('/workerDetails/:id', workerDetails);
 router.get('/userhome', userhome);
 router.get('/userlocation', verifyToken, userlocation);
 router.get('/newlocation', verifyToken, newlocation);
-router.post('/workRequest/:id', workRequest);
+router.post('/workRequest/:id', verifyToken, workRequest);
 
 router.get('/fetchWorker/:id', fetchWorker);
+router.get('/showRequests', verifyToken, showRequests);
+router.delete('/cancelRequest/:id', verifyToken, cancelRequest);
 
 module.exports = router;
