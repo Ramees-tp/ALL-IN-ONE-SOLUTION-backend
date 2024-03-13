@@ -5,7 +5,7 @@ const bcrypt = require('bcrypt');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 
-const {default: mongoose} = require('mongoose');
+// const {default: mongoose} = require('mongoose');
 
 maxAge = 7 * 24 * 60 * 60;
 const createToken = (id) => {
@@ -116,9 +116,12 @@ const obj = {
     try {
       const requests = await WorkRequest
           .find({workerId, status: 'pending'});
-      const userId = requests[0].userId._id;
+      const userIds = requests.map((request) => request.userId);
+
       const LookData = await UserDetails.aggregate([
-        {$match: {_id: new mongoose.Types.ObjectId(userId)}},
+        {$match: {
+          _id: {$in: userIds},
+        }},
         {
           $lookup: {
             from: 'usermoredetails',
@@ -128,8 +131,17 @@ const obj = {
           },
         },
       ]);
-      res.status(200).json({requests, LookData});
-      console.log('reqqqq', requests);
+
+      const requestsWithUserData = requests.map((request) => {
+        const userData =
+         LookData.find((data) => String(data._id) === String(request.userId));
+        return {
+          ...request.toObject(),
+          userData: userData ? userData.moredetails[0] : null,
+        };
+      });
+
+      res.status(200).json({requests: requestsWithUserData});
     } catch (error) {
       console.error(error);
       res.status(500).json({message: ' Server Error'});
