@@ -4,6 +4,8 @@ const UserOTP = require('../models/userOTP');
 const AddDetails = require('../models/userMoreDetails');
 const JobForm =require('../models/workSchema');
 const WorkRequest = require('../models/workRequests');
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -196,15 +198,16 @@ const obj = {
       DOB,
       phoneNumber,
       city,
-      coordinates,
+      // coordinates,
       district,
       pinCode} = req.body;
+    const [longitude, latitude] = req.body.coordinates.split(',').map(Number);
 
-    // if (!req.file || !req.file.location) {
-    //   return res.status(400).json({error: 'Invalid file uploaded'});
-    // }
-    // const image = req.file.location;
-    // console.log('Image uploaded successfully:', image);
+    if (!req.file || !req.file.location) {
+      return res.status(400).json({error: 'Invalid file uploaded'});
+    }
+    const image = req.file.location;
+    console.log('userImage:', image);
 
     const Token = await req.headers.authorization.split(' ')[1];
     console.log('deatailToken', Token);
@@ -223,10 +226,10 @@ const obj = {
                 DOB,
                 phoneNumber,
                 city,
-                coordinates,
+                coordinates: [longitude, latitude],
                 district,
                 pinCode,
-                // userImage: image,
+                userImage: image,
               },
             },
             {upsert: true},
@@ -348,26 +351,7 @@ const obj = {
       res.status(500).json({message: 'Backend server error'});
     }
   },
-  awailWorker: async (req, res)=>{
-    const id = req.params.id;
-    const workType = await JobForm.findOne({_id: id});
-    const job =workType.jobName;
-    try {
-      const awailWorker =
-       await WorkerDetails.find({jobType: job, isApproved: true});
-      console.log(awailWorker);
-      if (!awailWorker) {
-        return res.status(404).json({message: 'No worker found in Your City'});
-      }
-      return res
-          .status(200)
-          .json({data: awailWorker, message: 'fetching data success'});
-    } catch (err) {
-      res.
-          status(500)
-          .json({message: 'internal server error'});
-    }
-  },
+
   fetchWorker: async (req, res)=>{
     const {latitude, longitude} = req.query;
     const id = req.params.id;
@@ -422,6 +406,61 @@ const obj = {
         return res
             .status(404).json({success: false, message: 'Request not found'});
       }
+    } catch (err) {
+      console.error(err);
+      res.status(500)
+          .json({success: false, message: 'Internal server error'});
+    }
+  },
+  payment: async (req, res) =>{
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZ_KEY_ID,
+      key_secret: process.env.RAZ_SECRET_KEY,
+    });
+    try {
+      const options = req.body;
+      console.log(options);
+      const order = await razorpay.orders.create(options);
+      if (!order) {
+        return res.status(400).json({error: 'order not Found'});
+      }
+      return res.status(200).json({data: order});
+    } catch (err) {
+      console.error(err);
+      res.status(500)
+          .json({success: false, message: 'Internal server error'});
+    }
+  },
+  validatePayment: async (req, res) => {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      orderId,
+    } = req.body;
+    try {
+      const sha = crypto.createHmac('sha256', process.env.RAZ_SECRET_KEY);
+      sha.update(`${razorpay_order_id}|${razorpay_payment_id}`);
+      const digest = sha.digest('hex');
+      if (digest !== razorpay_signature) {
+        return res.status(400).json({message: 'transation is not legit'});
+      }
+      const order = await WorkRequest.findByIdAndUpdate(
+          orderId,
+          {
+            payment: true,
+            orderId: razorpay_order_id,
+            paymentId: razorpay_payment_id,
+          },
+          {new: true, upsert: true},
+      );
+      return res
+          .status(200)
+          .json({
+            message: 'transation is success',
+            orderId: razorpay_order_id,
+            paymentId: razorpay_payment_id
+          });
     } catch (err) {
       console.error(err);
       res.status(500)

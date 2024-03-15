@@ -10,7 +10,6 @@ const {
   resetPass,
   addDetails,
   userProfile,
-  awailWorker,
   userhome,
   userlocation,
   newlocation,
@@ -19,6 +18,8 @@ const {
   workRequest,
   showRequests,
   cancelRequest,
+  payment,
+  validatePayment,
 } = require('../controllers/userController');
 
 router.post('/signUp', signUp);
@@ -26,10 +27,10 @@ router.post('/login', login);
 router.post('/userOTP', verifyToken, userOTP);
 router.post('/verifyOTP', verifyOTP);
 router.post('/resetPass', verifyToken, resetPass);
-router.put('/addDetails', addDetails);
+router.put('/addDetails', upload.single('userImage'), addDetails);
 router.get('/userProfile', userProfile);
 
-router.get('/awailWorker/:id', awailWorker);
+
 router.get('/workerDetails/:id', workerDetails);
 router.get('/userhome', userhome);
 router.get('/userlocation', verifyToken, userlocation);
@@ -39,5 +40,7 @@ router.post('/workRequest/:id', verifyToken, workRequest);
 router.get('/fetchWorker/:id', fetchWorker);
 router.get('/showRequests', verifyToken, showRequests);
 router.delete('/cancelRequest/:id', verifyToken, cancelRequest);
+router.post('/payment', payment);
+router.post('/validatePayment', validatePayment);
 
 module.exports = router;

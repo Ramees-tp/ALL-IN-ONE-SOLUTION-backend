@@ -78,6 +78,10 @@ const workerRegistration = new Schema({
     type: Boolean,
     default: false,
   },
+  isHalfDay: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 module.exports = mongoose.model('workerDetails', workerRegistration);

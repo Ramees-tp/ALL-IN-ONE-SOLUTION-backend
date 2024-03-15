@@ -24,11 +24,14 @@
     "multer-s3": "^3.0.1",
     "nodemailer": "^6.9.9",
     "nodemon": "^3.0.3",
+    "razorpay": "^2.9.2",
+    "request": "^2.88.2",
+    "request-promise": "^4.2.6",
     "twilio": "^4.22.0"
   },
-  "description": "",
   "devDependencies": {
     "eslint": "^8.56.0",
     "eslint-config-google": "^0.14.0"
-  }
+  },
+  "description": ""
 }

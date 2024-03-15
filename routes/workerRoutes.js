@@ -9,6 +9,7 @@ const {
   workerProfile,
   workRequest,
   acceptOrDecline,
+  updateIsHalfDay,
 } = require('../controllers/workerController');
 
 
@@ -17,6 +18,7 @@ router.get('/workerProfile', workerVerifyToken, workerProfile);
 router.patch('/updateDetails', updateDetails);
 router.get('/workRequest', workRequest);
 router.get('/acceptOrDecline/:id', acceptOrDecline);
+router.put('/updateIsHalfDay', workerVerifyToken, updateIsHalfDay);
 
 
 module.exports = router;

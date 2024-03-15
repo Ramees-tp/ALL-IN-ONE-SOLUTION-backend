@@ -24,6 +24,16 @@ const requestSchema = new mongoose.Schema({
     enum: ['pending', 'accepted', 'declined'],
     default: 'pending',
   },
+  payment: {
+    type: Boolean,
+    default: false,
+  },
+  orderId: {
+    type: String,
+  },
+  paymentId: {
+    type: String,
+  },
 });
 
 module.exports = mongoose.model('workRequests', requestSchema);

@@ -168,6 +168,26 @@ const obj = {
       res.status(500).json({message: ' Server Error'});
     }
   },
+  updateIsHalfDay: async (req, res) => {
+    const {isHalfDay} = req.body;
+    const decodedToken = req.decodedWorkerToken;
+    const workerId = decodedToken.id;
+    try {
+      const worker = await WorkerDetails.findById({_id: workerId});
+      if (!worker) {
+        return res.status(404).json({message: 'Worker not found'});
+      }
+      worker.isHalfDay = isHalfDay;
+      await worker.save();
+      res
+          .status(200)
+          .json({message: 'Worker updated successfully',
+            isHalfDay: worker.isHalfDay});
+    } catch (error) {
+      console.error('Error updating worker:', error);
+      res.status(500).json({message: 'Internal server error'});
+    }
+  },
 
 };
 
