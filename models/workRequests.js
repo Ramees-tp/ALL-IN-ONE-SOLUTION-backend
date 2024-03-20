@@ -19,6 +19,15 @@ const requestSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  coordinates: {
+    type: [Number],
+    index: '2dsphere',
+    required: true,
+  },
+  location: {
+    type: String,
+    required: true,
+  },
   status: {
     type: String,
     enum: ['pending', 'accepted', 'declined'],
@@ -32,6 +41,9 @@ const requestSchema = new mongoose.Schema({
     type: String,
   },
   paymentId: {
+    type: String,
+  },
+  otp: {
     type: String,
   },
 });

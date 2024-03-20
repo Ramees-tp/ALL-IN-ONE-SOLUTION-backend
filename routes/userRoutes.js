@@ -20,6 +20,8 @@ const {
   cancelRequest,
   payment,
   validatePayment,
+  saveMessages,
+  showMessage,
 } = require('../controllers/userController');
 
 router.post('/signUp', signUp);
@@ -42,5 +44,7 @@ router.get('/showRequests', verifyToken, showRequests);
 router.delete('/cancelRequest/:id', verifyToken, cancelRequest);
 router.post('/payment', payment);
 router.post('/validatePayment', validatePayment);
+router.post('/saveMessages', saveMessages);
+router.get('/showMessage', showMessage);
 
 module.exports = router;

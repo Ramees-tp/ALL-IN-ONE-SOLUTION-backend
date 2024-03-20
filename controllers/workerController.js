@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 
+
 // const {default: mongoose} = require('mongoose');
 
 maxAge = 7 * 24 * 60 * 60;
@@ -88,6 +89,31 @@ const obj = {
       res.status(500).json({message: 'Internal server error'});
     }
   },
+  login: async (req, res)=>{
+    try {
+      const {email, password} = req.body;
+      const existWorker = await WorkerDetails.findOne({email});
+      if (existWorker) {
+        const checkPass = bcrypt.compareSync(password, existWorker.password);
+        if (checkPass) {
+          return res
+              .status(200)
+              .json({message: 'worker logged in successfully'});
+        } else {
+          return res
+              .status(400)
+              .json({message: 'invalid password, try again'});
+        }
+      } else {
+        return res
+            .status(400)
+            .json({message: 'worker not found, try again'});
+      }
+    } catch (error) {
+      console.error('Error during signUp:', error);
+      res.status(500).json({message: 'Internal server error'});
+    }
+  },
   workerProfile: async (req, res)=>{
     const Token = await req.headers.workerauth.split(' ')[1];
     try {
@@ -115,7 +141,7 @@ const obj = {
     const workerId = decodedToken.id;
     try {
       const requests = await WorkRequest
-          .find({workerId, status: 'pending'});
+          .find({workerId});
       const userIds = requests.map((request) => request.userId);
 
       const LookData = await UserDetails.aggregate([
@@ -183,6 +209,39 @@ const obj = {
           .status(200)
           .json({message: 'Worker updated successfully',
             isHalfDay: worker.isHalfDay});
+    } catch (error) {
+      console.error('Error updating worker:', error);
+      res.status(500).json({message: 'Internal server error'});
+    }
+  },
+  // verifyOTP: async (req, res)=>{
+  //   const {orderId} = req.body;
+  //   try {
+  //     const order = await WorkRequest
+  //         .find({_id: orderId, payment: true, otp: OTP});
+  //     if (!order) {
+  //       return res.status(404).json({message: 'Order Not Found'});
+  //     }
+  //   } catch (error) {
+  //     console.error('Error updating worker:', error);
+  //     res.status(500).json({message: 'Internal server error'});
+  //   }
+  // },
+
+  verifyOTP: async (req, res) => {
+    const {otpValues, orderId} = req.body;
+    const otp = parseInt(otpValues.join(''), 10);
+    console.log('oooootp', otpValues, otp);
+    try {
+      const request = await WorkRequest.findOne({_id: orderId});
+      if (!request) {
+        return res.status(404).json({message: 'not found'});
+      }
+      if (request.secretcode===otp) {
+        return res
+            .status(200)
+            .json({success: true, message: 'found correct Otp'});
+      }
     } catch (error) {
       console.error('Error updating worker:', error);
       res.status(500).json({message: 'Internal server error'});

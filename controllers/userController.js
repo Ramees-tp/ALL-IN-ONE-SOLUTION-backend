@@ -4,6 +4,7 @@ const UserOTP = require('../models/userOTP');
 const AddDetails = require('../models/userMoreDetails');
 const JobForm =require('../models/workSchema');
 const WorkRequest = require('../models/workRequests');
+const MessageSchema = require('../models/messageSchema');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 
@@ -289,7 +290,7 @@ const obj = {
     }
   },
   workRequest: async (req, res) => {
-    const {selectedDate, selectedDay} =req.body;
+    const {selectedDate, selectedDay, location, coordinates} =req.body;
     const workerId = req.params.id;
     const decodedToken = req.decodedToken;
     const userId = decodedToken.id;
@@ -300,6 +301,8 @@ const obj = {
         userId,
         date: formattedDate,
         day: selectedDay,
+        coordinates: [coordinates.lng, coordinates.lat],
+        location: location,
       });
       return res.status(201).json({request, message: 'your request sended'});
     } catch (error) {
@@ -445,22 +448,72 @@ const obj = {
       if (digest !== razorpay_signature) {
         return res.status(400).json({message: 'transation is not legit'});
       }
-      const order = await WorkRequest.findByIdAndUpdate(
+
+      const OTP = Math.floor(100000 + Math.random() * 900000);
+
+      await WorkRequest.findByIdAndUpdate(
           orderId,
           {
             payment: true,
             orderId: razorpay_order_id,
             paymentId: razorpay_payment_id,
+            otp: OTP,
           },
           {new: true, upsert: true},
       );
+
       return res
           .status(200)
           .json({
             message: 'transation is success',
             orderId: razorpay_order_id,
-            paymentId: razorpay_payment_id
+            paymentId: razorpay_payment_id,
           });
+    } catch (err) {
+      console.error(err);
+      res.status(500)
+          .json({success: false, message: 'Internal server error'});
+    }
+  },
+  saveMessages: async (req, res) => {
+    const {message, sender, requestId, receiver} =req.body;
+    try {
+      // const receiver = userId === message.sender ? userId : workerId;
+      const newMessage = new MessageSchema({
+        message: message,
+        sender: sender,
+        receiver: receiver,
+        requestId,
+      });
+      newMessage.save();
+
+      res.status(200)
+          .json({success: true, message: 'Messages saved successfully'});
+    } catch (err) {
+      console.error(err);
+      res.status(500)
+          .json({success: false, message: 'Internal server error'});
+    }
+  },
+  showMessage: async (req, res) =>{
+    const {workerId, userId, requestId} = req.query;
+    console.log(workerId, userId, requestId);
+    try {
+      const yourMessages = await MessageSchema.find({
+        $or: [
+          {sender: workerId, receiver: userId, requestId},
+          {sender: userId, receiver: workerId, requestId},
+        ],
+      });
+
+      // Combine your messages and other messages
+      const allMessages = [...yourMessages];
+
+      // Sort messages based on createdAt timestamp
+      const sortedMessages = allMessages
+          .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+      res.status(200).json({success: true, messages: sortedMessages});
     } catch (err) {
       console.error(err);
       res.status(500)
