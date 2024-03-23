@@ -96,9 +96,16 @@ const obj = {
       if (existWorker) {
         const checkPass = bcrypt.compareSync(password, existWorker.password);
         if (checkPass) {
+          const Token = createToken(existWorker._id);
+          res.cookie('wjwt', Token, {
+            httponly: true,
+            maxAge: maxAge * 1000,
+            secure: true,
+          });
+          console.log('login Token:', Token);
           return res
               .status(200)
-              .json({message: 'worker logged in successfully'});
+              .json({message: 'worker logged in successfully', Token});
         } else {
           return res
               .status(400)
@@ -109,6 +116,21 @@ const obj = {
             .status(400)
             .json({message: 'worker not found, try again'});
       }
+    } catch (error) {
+      console.error('Error during signUp:', error);
+      res.status(500).json({message: 'Internal server error'});
+    }
+  },
+  logOut: async (req, res) => {
+    try {
+      const decodedToken = req.decodedWorkerToken;
+      const workerId = decodedToken.id;
+      console.log(workerId);
+      const existWorker = WorkerDetails.findOne({_id: workerId});
+      if (existWorker) {
+        return res.status(200).json({message: 'worker is legit'});
+      }
+      return res.status(404).json({message: 'no worker Found'});
     } catch (error) {
       console.error('Error during signUp:', error);
       res.status(500).json({message: 'Internal server error'});
@@ -214,19 +236,26 @@ const obj = {
       res.status(500).json({message: 'Internal server error'});
     }
   },
-  // verifyOTP: async (req, res)=>{
-  //   const {orderId} = req.body;
-  //   try {
-  //     const order = await WorkRequest
-  //         .find({_id: orderId, payment: true, otp: OTP});
-  //     if (!order) {
-  //       return res.status(404).json({message: 'Order Not Found'});
-  //     }
-  //   } catch (error) {
-  //     console.error('Error updating worker:', error);
-  //     res.status(500).json({message: 'Internal server error'});
-  //   }
-  // },
+  updateOnline: async (req, res) => {
+    const {isOnline} = req.body;
+    const decodedToken = req.decodedWorkerToken;
+    const workerId = decodedToken.id;
+    try {
+      const worker = await WorkerDetails.findById({_id: workerId});
+      if (!worker) {
+        return res.status(404).json({message: 'Worker not found'});
+      }
+      worker.isOnline = isOnline;
+      await worker.save();
+      res
+          .status(200)
+          .json({message: 'Worker updated successfully',
+            isHalfDay: worker.isHalfDay});
+    } catch (error) {
+      console.error('Error updating worker:', error);
+      res.status(500).json({message: 'Internal server error'});
+    }
+  },
 
   verifyOTP: async (req, res) => {
     const {otpValues, orderId} = req.body;
@@ -234,13 +263,22 @@ const obj = {
     console.log('oooootp', otpValues, otp);
     try {
       const request = await WorkRequest.findOne({_id: orderId});
+      console.log(request);
       if (!request) {
         return res.status(404).json({message: 'not found'});
       }
-      if (request.secretcode===otp) {
+      console.log(request.secretcode);
+      const secretCodeInt = parseInt(request.secretcode, 10);
+      console.log(secretCodeInt);
+      if (secretCodeInt===otp) {
+        request.completed=true;
         return res
             .status(200)
             .json({success: true, message: 'found correct Otp'});
+      } else {
+        return res
+            .status(400)
+            .json({success: false, message: 'incorrect Otp'});
       }
     } catch (error) {
       console.error('Error updating worker:', error);

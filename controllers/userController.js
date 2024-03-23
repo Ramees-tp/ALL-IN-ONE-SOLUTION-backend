@@ -68,9 +68,16 @@ const obj = {
       if (existUser) {
         const checkPass = bcrypt.compareSync(password, existUser.password);
         if (checkPass) {
+          const Token = createToken(existUser._id);
+          res.cookie('jwt', Token, {
+            httponly: true,
+            maxAge: maxAge * 1000,
+            secure: true,
+          });
+          console.log('login Token:', Token);
           return res
               .status(200)
-              .json({message: 'User logged in successfully'});
+              .json({message: 'User logged in successfully', Token});
         } else {
           return res
               .status(400)
@@ -83,6 +90,21 @@ const obj = {
       }
     } catch (err) {
       res.status(500).json({error: 'ivalid details', err});
+    }
+  },
+  logOut: async (req, res) => {
+    try {
+      const decodedToken = req.decodedToken;
+      const userId = decodedToken.id;
+      console.log(userId);
+      const existUser = UserDetails.findOne({userId});
+      if (existUser) {
+        return res.status(200).json({message: 'user is legit'});
+      }
+      return res.status(404).json({message: 'no user Found'});
+    } catch (error) {
+      console.error('Error during signUp:', error);
+      res.status(500).json({message: 'Internal server error'});
     }
   },
   userOTP: async (req, res) => {
@@ -199,7 +221,6 @@ const obj = {
       DOB,
       phoneNumber,
       city,
-      // coordinates,
       district,
       pinCode} = req.body;
     const [longitude, latitude] = req.body.coordinates.split(',').map(Number);
@@ -265,7 +286,7 @@ const obj = {
           },
         },
       ]);
-      console.log(fullData);
+
       return res
           .status(200)
           .json({fullData, message: 'sending user details'});
@@ -330,7 +351,6 @@ const obj = {
       const user = await AddDetails.findOne({userId: userId});
       const userLocation = user.city;
       const userCoordinates = user.coordinates;
-      console.log('location', userLocation);
 
       return res
           .status(200)
@@ -356,7 +376,8 @@ const obj = {
   },
 
   fetchWorker: async (req, res)=>{
-    const {latitude, longitude} = req.query;
+    const {latitude, longitude, radius} = req.query;
+    console.log('llllat', latitude, longitude);
     const id = req.params.id;
     const workType = await JobForm.findOne({_id: id});
     const job =workType.jobName;
@@ -370,7 +391,7 @@ const obj = {
               type: 'Point',
               coordinates: [parseFloat(longitude), parseFloat(latitude)],
             },
-            $maxDistance: 10*1000,
+            $maxDistance: radius*1000,
           },
         },
       });
@@ -378,7 +399,7 @@ const obj = {
           .json({data: workers, message: 'fetching worker list success'});
     } catch (error) {
       console.error(error);
-      res.status(500).json({error: 'Internal Server Error'});
+      res.status(500).json({error: 'fetch Internal Server Error'});
     }
   },
   showRequests: async (req, res)=>{
@@ -457,7 +478,7 @@ const obj = {
             payment: true,
             orderId: razorpay_order_id,
             paymentId: razorpay_payment_id,
-            otp: OTP,
+            secretcode: OTP,
           },
           {new: true, upsert: true},
       );

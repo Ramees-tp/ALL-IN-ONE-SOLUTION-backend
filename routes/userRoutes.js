@@ -22,10 +22,12 @@ const {
   validatePayment,
   saveMessages,
   showMessage,
+  logOut,
 } = require('../controllers/userController');
 
 router.post('/signUp', signUp);
 router.post('/login', login);
+router.post('/logOut', verifyToken, logOut);
 router.post('/userOTP', verifyToken, userOTP);
 router.post('/verifyOTP', verifyOTP);
 router.post('/resetPass', verifyToken, resetPass);

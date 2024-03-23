@@ -43,8 +43,12 @@ const requestSchema = new mongoose.Schema({
   paymentId: {
     type: String,
   },
-  otp: {
+  secretcode: {
     type: String,
+  },
+  completed: {
+    type: Boolean,
+    default: false,
   },
 });
 

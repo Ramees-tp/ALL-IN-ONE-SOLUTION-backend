@@ -1,4 +1,5 @@
 const workerDetails = require('../models/workerRegistration');
+const WorkRequest = require('../models/workRequests');
 const JobForm = require('../models/workSchema');
 // const twilioOtp = require('../utils/twilio');
 const sendEmail = require('../utils/nodemailer');
@@ -96,6 +97,17 @@ const obj = {
       res
           .status(200)
           .json({message: 'Job type added successfully', imageUrl: image});
+    } catch (error) {
+      console.error('Error adding job type:', error);
+      res.status(500).json({error: 'Internal Server Error'});
+    }
+  },
+  requestDetails: async (req, res) => {
+    try {
+      const requests = await WorkRequest
+          .find({payment: true}).populate('workerId');
+
+      res.status(200).json({success: true, data: requests});
     } catch (error) {
       console.error('Error adding job type:', error);
       res.status(500).json({error: 'Internal Server Error'});
