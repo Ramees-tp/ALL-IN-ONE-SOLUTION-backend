@@ -5,10 +5,7 @@ const bcrypt = require('bcrypt');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 
-
-// const {default: mongoose} = require('mongoose');
-
-maxAge = 7 * 24 * 60 * 60;
+maxAge = 2 * 24 * 60 * 60;
 const createToken = (id) => {
   return jwt.sign({id}, process.env.ACCESS_TOKEN_WORKER, {expiresIn: maxAge});
 };
@@ -154,8 +151,43 @@ const obj = {
       res.status(401).json({error: 'invalid or expired token'});
     }
   },
-  updateDetails: async (req, res)=>{
-    const {} =req.body;
+  updateProfile: async (req, res)=>{
+    const decodedId = req.decodedWorkerToken;
+    const id = decodedId.id;
+    console.log(id);
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      city,
+      pinCode,
+      district,
+    } =req.body;
+    try {
+      const worker = await WorkerDetails.findOneAndUpdate(
+          {_id: id},
+          {
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+            phone: phone,
+            city: city,
+            pinCode: pinCode,
+            district: district,
+          },
+          {new: true},
+      );
+
+      if (!worker) {
+        return res.status(404).json({message: 'Worker not found'});
+      }
+
+      return res.status(200).json(worker);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({message: ' Server Error'});
+    }
   },
   workRequest: async (req, res)=> {
     const Token = await req.headers.workerauth.split(' ')[1];
@@ -210,7 +242,7 @@ const obj = {
         request.status= 'declined';
       }
       await request.save();
-      res.status(200).json({message: 'Work request declined successfully'});
+      res.status(200).json({message: 'Work request updated successfully'});
     } catch (error) {
       console.error(error);
       res.status(500).json({message: ' Server Error'});
@@ -272,6 +304,7 @@ const obj = {
       console.log(secretCodeInt);
       if (secretCodeInt===otp) {
         request.completed=true;
+        await request.save();
         return res
             .status(200)
             .json({success: true, message: 'found correct Otp'});

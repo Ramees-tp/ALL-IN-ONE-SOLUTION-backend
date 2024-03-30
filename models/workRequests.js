@@ -50,6 +50,13 @@ const requestSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  wage: {
+    type: Number,
+    required: true,
+  },
+  gotWage: {
+    type: Boolean,
+  },
 });
 
 module.exports = mongoose.model('workRequests', requestSchema);

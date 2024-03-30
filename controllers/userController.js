@@ -16,7 +16,7 @@ require('dotenv').config();
 
 const {default: mongoose} = require('mongoose');
 
-maxAge = 7 * 24 * 60 * 60;
+maxAge = 2 * 24 * 60 * 60;
 const createToken = (id) => {
   return jwt.sign({id}, process.env.ACCESS_TOKEN, {expiresIn: maxAge});
 };
@@ -311,11 +311,14 @@ const obj = {
     }
   },
   workRequest: async (req, res) => {
-    const {selectedDate, selectedDay, location, coordinates} =req.body;
+    const {selectedDate, selectedDay, location, coordinates, id1} =req.body;
     const workerId = req.params.id;
     const decodedToken = req.decodedToken;
     const userId = decodedToken.id;
     try {
+      const jobType = await JobForm.findOne({_id: id1});
+      const wage = jobType.wage;
+
       const formattedDate = new Date(selectedDate).toISOString().split('T')[0];
       const request = await WorkRequest.create({
         workerId,
@@ -324,6 +327,7 @@ const obj = {
         day: selectedDay,
         coordinates: [coordinates.lng, coordinates.lat],
         location: location,
+        wage,
       });
       return res.status(201).json({request, message: 'your request sended'});
     } catch (error) {
@@ -377,7 +381,7 @@ const obj = {
 
   fetchWorker: async (req, res)=>{
     const {latitude, longitude, radius} = req.query;
-    console.log('llllat', latitude, longitude);
+    console.log('llllat', latitude, longitude, radius);
     const id = req.params.id;
     const workType = await JobForm.findOne({_id: id});
     const job =workType.jobName;
@@ -445,6 +449,7 @@ const obj = {
       const options = req.body;
       console.log(options);
       const order = await razorpay.orders.create(options);
+      console.log('order', order);
       if (!order) {
         return res.status(400).json({error: 'order not Found'});
       }

@@ -5,7 +5,6 @@ const {upload} = require('../utils/multer');
 
 const {
   registration,
-  updateDetails,
   workerProfile,
   workRequest,
   acceptOrDecline,
@@ -14,6 +13,7 @@ const {
   verifyOTP,
   logOut,
   updateOnline,
+  updateProfile,
 } = require('../controllers/workerController');
 
 
@@ -21,7 +21,7 @@ router.post('/registration', upload.single('profileImage'), registration);
 router.post('/login', login);
 router.post('/logOut', workerVerifyToken, logOut);
 router.get('/workerProfile', workerVerifyToken, workerProfile);
-router.patch('/updateDetails', updateDetails);
+router.put('/updateProfile', workerVerifyToken, updateProfile);
 router.get('/workRequest', workRequest);
 router.get('/acceptOrDecline/:id', acceptOrDecline);
 router.put('/updateIsHalfDay', workerVerifyToken, updateIsHalfDay);

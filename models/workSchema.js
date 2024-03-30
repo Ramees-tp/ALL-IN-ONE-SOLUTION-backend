@@ -9,6 +9,10 @@ const workDetails= new Schema({
     type: String,
     required: true,
   },
+  wage: {
+    type: Number,
+    required: true,
+  },
   jobImage: {
     type: String,
   },
