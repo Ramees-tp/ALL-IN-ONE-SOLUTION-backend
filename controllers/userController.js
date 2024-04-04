@@ -18,13 +18,13 @@ const {default: mongoose} = require('mongoose');
 
 maxAge = 2 * 24 * 60 * 60;
 const createToken = (id) => {
-  return jwt.sign({id}, process.env.ACCESS_TOKEN, {expiresIn: maxAge});
+  return jwt
+      .sign({id, role: 'user'}, process.env.ACCESS_TOKEN, {expiresIn: maxAge});
 };
 
 const obj = {
   signUp: async (req, res) => {
     const {username, email, password} = req.body;
-    console.log(req.body);
 
     try {
       const existUser = await UserDetails.findOne({email});
@@ -43,7 +43,6 @@ const obj = {
           maxAge: maxAge * 1000,
           secure: true,
         });
-        console.log('userController:', Token);
 
         return res.status(200).json({
           user: newUser._id,
@@ -56,7 +55,6 @@ const obj = {
             .json({message: 'User with this email already exists'});
       }
     } catch (error) {
-      console.error('Error during signUp:', error);
       res.status(500).json({message: 'Internal server error'});
     }
   },
@@ -74,7 +72,6 @@ const obj = {
             maxAge: maxAge * 1000,
             secure: true,
           });
-          console.log('login Token:', Token);
           return res
               .status(200)
               .json({message: 'User logged in successfully', Token});
@@ -96,14 +93,12 @@ const obj = {
     try {
       const decodedToken = req.decodedToken;
       const userId = decodedToken.id;
-      console.log(userId);
       const existUser = UserDetails.findOne({userId});
       if (existUser) {
         return res.status(200).json({message: 'user is legit'});
       }
       return res.status(404).json({message: 'no user Found'});
     } catch (error) {
-      console.error('Error during signUp:', error);
       res.status(500).json({message: 'Internal server error'});
     }
   },
@@ -209,7 +204,6 @@ const obj = {
         return res.status(404).json({error: 'User not found'});
       }
     } catch (err) {
-      console.error('Error decoding token:', err);
       res.status(401).json({error: 'Invalid or expired token'});
       return;
     }
@@ -229,10 +223,8 @@ const obj = {
       return res.status(400).json({error: 'Invalid file uploaded'});
     }
     const image = req.file.location;
-    console.log('userImage:', image);
 
     const Token = await req.headers.authorization.split(' ')[1];
-    console.log('deatailToken', Token);
     try {
       const decodedToken = jwt.verify(Token, process.env.ACCESS_TOKEN);
       const userID = decodedToken.id;
@@ -261,7 +253,6 @@ const obj = {
         return res.status(404).json({message: 'user not found'});
       }
     } catch (err) {
-      console.error('Error decoding token:', err);
       res.status(401).json({error: 'Invalid or expired token'});
       return;
     }
@@ -291,7 +282,6 @@ const obj = {
           .status(200)
           .json({fullData, message: 'sending user details'});
     } catch (err) {
-      console.log('Error decoding token', err);
       res.status(401).json({error: 'invalid or expired token'});
     }
   },
@@ -331,7 +321,6 @@ const obj = {
       });
       return res.status(201).json({request, message: 'your request sended'});
     } catch (error) {
-      console.error(error);
       res.status(500).json({message: 'Server Error'});
     }
   },
@@ -381,7 +370,6 @@ const obj = {
 
   fetchWorker: async (req, res)=>{
     const {latitude, longitude, radius} = req.query;
-    console.log('llllat', latitude, longitude, radius);
     const id = req.params.id;
     const workType = await JobForm.findOne({_id: id});
     const job =workType.jobName;
@@ -402,7 +390,6 @@ const obj = {
       res.status(200)
           .json({data: workers, message: 'fetching worker list success'});
     } catch (error) {
-      console.error(error);
       res.status(500).json({error: 'fetch Internal Server Error'});
     }
   },
@@ -413,14 +400,12 @@ const obj = {
       const requests = await WorkRequest.find({userId}).populate('workerId');
       res.status(200).json({success: true, requests});
     } catch (err) {
-      console.error(err);
       res.status(500)
           .json({success: false, message: 'Internal server error'});
     }
   },
   cancelRequest: async (req, res) =>{
     const requestId = req.params.id;
-    console.log(requestId);
     const decodedToken = req.decodedToken;
     try {
       const userId = decodedToken.id;
@@ -435,7 +420,6 @@ const obj = {
             .status(404).json({success: false, message: 'Request not found'});
       }
     } catch (err) {
-      console.error(err);
       res.status(500)
           .json({success: false, message: 'Internal server error'});
     }
@@ -447,15 +431,13 @@ const obj = {
     });
     try {
       const options = req.body;
-      console.log(options);
       const order = await razorpay.orders.create(options);
-      console.log('order', order);
+
       if (!order) {
         return res.status(400).json({error: 'order not Found'});
       }
       return res.status(200).json({data: order});
     } catch (err) {
-      console.error(err);
       res.status(500)
           .json({success: false, message: 'Internal server error'});
     }
@@ -496,7 +478,6 @@ const obj = {
             paymentId: razorpay_payment_id,
           });
     } catch (err) {
-      console.error(err);
       res.status(500)
           .json({success: false, message: 'Internal server error'});
     }
@@ -516,14 +497,12 @@ const obj = {
       res.status(200)
           .json({success: true, message: 'Messages saved successfully'});
     } catch (err) {
-      console.error(err);
       res.status(500)
           .json({success: false, message: 'Internal server error'});
     }
   },
   showMessage: async (req, res) =>{
     const {workerId, userId, requestId} = req.query;
-    console.log(workerId, userId, requestId);
     try {
       const yourMessages = await MessageSchema.find({
         $or: [
@@ -531,7 +510,6 @@ const obj = {
           {sender: userId, receiver: workerId, requestId},
         ],
       });
-
       // Combine your messages and other messages
       const allMessages = [...yourMessages];
 
@@ -541,7 +519,6 @@ const obj = {
 
       res.status(200).json({success: true, messages: sortedMessages});
     } catch (err) {
-      console.error(err);
       res.status(500)
           .json({success: false, message: 'Internal server error'});
     }

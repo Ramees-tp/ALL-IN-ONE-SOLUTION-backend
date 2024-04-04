@@ -54,7 +54,7 @@ const workerRegistration = new Schema({
     required: true,
   },
   IFC: {
-    type: Number,
+    type: String,
     required: true,
   },
   accountNumber: {

@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 const workerDetails = require('../models/workerRegistration');
 const WorkRequest = require('../models/workRequests');
 const JobForm = require('../models/workSchema');
@@ -14,7 +15,8 @@ const jwt = require('jsonwebtoken');
 
 maxAge = 2 * 24 * 60 * 60;
 const createToken = (id) => {
-  return jwt.sign({id}, process.env.ACCESS_TOKEN, {expiresIn: maxAge});
+  return jwt
+      .sign({id, role: 'admin'}, process.env.ACCESS_TOKEN, {expiresIn: maxAge});
 };
 
 const obj = {
@@ -33,7 +35,6 @@ const obj = {
   login: async (req, res) => {
     try {
       const {username, password} = req.body;
-      console.log(username, password);
       const isAdmin = await AdminAuth.findOne({mastername: username});
       if (!isAdmin) {
         return res
@@ -47,17 +48,15 @@ const obj = {
             .json({message: 'Incorrect Password'});
       }
       const Token = createToken(isAdmin._id);
-      res.cookie('ajwt', Token, {
+      res.cookie('jwt', Token, {
         httponly: true,
         maxAge: maxAge * 1000,
         secure: true,
       });
-      console.log('Admin Token:', Token);
       return res
           .status(200)
           .json({message: 'Welcome Admin', Token});
     } catch (error) {
-      console.error('Error on login:', error);
       res.status(500).json({error: 'Internal server error'});
     }
   },
@@ -72,7 +71,6 @@ const obj = {
           .status(200)
           .json({data: forApproval, totalCount, message: 'Data fetch success'});
     } catch (error) {
-      console.error('Error fetching workers:', error);
       res
           .status(500)
           .json({error: 'Server error', errorMessage: error.message});
@@ -111,23 +109,19 @@ const obj = {
             .json({message: 'SMS dispatched, Given access to worker'});
       }
     } catch (error) {
-      console.error('Error approving worker access:', error);
       res.status(500).json({error: 'Internal server error'});
     }
   },
   rejectAccess: async (req, res) => {
     const id = req.params.id;
-    console.log(id);
     try {
       const request = await workerDetails.findById({_id: id});
-      console.log(request);
       if (!request) {
         return res.status(404).json({message: 'user not found'});
       }
       request.isApproved = false;
       return res.status(200).json({message: 'request rejected'});
     } catch (error) {
-      console.error('Error approving worker access:', error);
       res.status(500).json({error: 'Internal server error'});
     }
   },
@@ -143,20 +137,17 @@ const obj = {
         message: 'fetching user data success',
       });
     } catch (error) {
-      console.error('Error approving worker access:', error);
       res.status(500).json({error: 'internal server error'});
     }
   },
   addJobType: async (req, res) => {
     try {
       const {jobName, jobDescription, wage} = req.body;
-      console.log(wage);
 
       if (!req.file || !req.file.location) {
         return res.status(400).json({error: 'Invalid file uploaded'});
       }
       const image = req.file.location;
-      console.log('Image uploaded successfully:', image);
 
       const newForm= new JobForm({
         jobName,
@@ -170,7 +161,6 @@ const obj = {
           .status(200)
           .json({message: 'Job type added successfully', imageUrl: image});
     } catch (error) {
-      console.error('Error adding job type:', error);
       res.status(500).json({error: 'Internal Server Error'});
     }
   },
@@ -181,7 +171,6 @@ const obj = {
 
       res.status(200).json({success: true, data: requests});
     } catch (error) {
-      console.error('Error adding job type:', error);
       res.status(500).json({error: 'Internal Server Error'});
     }
   },
@@ -192,7 +181,6 @@ const obj = {
           .populate('workerId');
       return res.status(200).json({data: users, message: 'completed works'});
     } catch (error) {
-      console.error('Error on fetching users:', error);
       res.status(500).json({error: 'Internal Server Error'});
     }
   },
@@ -203,15 +191,12 @@ const obj = {
     });
     try {
       const options = req.body;
-      console.log('worker', options);
       const order = await razorpay.orders.create(options);
-      console.log('order', order);
       if (!order) {
         return res.status(400).json({error: 'order not Found'});
       }
       return res.status(200).json({data: order});
     } catch (error) {
-      console.error('Error on admin payment', error);
       res.status(500).json({error: 'Internal Server Error'});
     }
   },
@@ -237,10 +222,8 @@ const obj = {
       if (!updatedWorkRequest) {
         return res.status(404).json({message: 'Work request not found'});
       }
-      console.log('Updated work request:', updatedWorkRequest);
       return res.status(200).json({message: 'payment for worker done'});
     } catch (error) {
-      console.error('Error on validating', error);
       res.status(500).json({error: 'Internal Server Error'});
     }
   },
@@ -251,7 +234,6 @@ const obj = {
           .populate('workerId');
       return res.status(200).json({data: users, message: 'completed works'});
     } catch (error) {
-      console.error('Error on fetching users:', error);
       res.status(500).json({error: 'Internal Server Error'});
     }
   },
@@ -270,7 +252,6 @@ const obj = {
       const totalCount = await UserData.countDocuments({});
       res.status(200).json({data: users, totalCount});
     } catch (error) {
-      console.error('Error on fetching users:', error);
       res.status(500).json({error: 'Internal Server Error'});
     }
   },

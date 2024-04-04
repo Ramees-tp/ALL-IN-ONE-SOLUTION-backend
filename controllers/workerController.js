@@ -7,7 +7,8 @@ const jwt = require('jsonwebtoken');
 
 maxAge = 2 * 24 * 60 * 60;
 const createToken = (id) => {
-  return jwt.sign({id}, process.env.ACCESS_TOKEN_WORKER, {expiresIn: maxAge});
+  return jwt.sign({id, role: 'worker'},
+      process.env.ACCESS_TOKEN_WORKER, {expiresIn: maxAge});
 };
 
 const obj = {
@@ -41,7 +42,7 @@ const obj = {
       const existWorker = await WorkerDetails.findOne({email});
       if (existWorker) {
         return res
-            .status(200)
+            .status(404)
             .json({
               message: 'user with this email already exist, please login',
             });
@@ -70,19 +71,17 @@ const obj = {
         await newWorker.save();
 
         const Token = createToken(newWorker._id);
-        res.cookie('wjwt', Token, {
+        res.cookie('jwt', Token, {
           httponly: true,
           maxAge: maxAge * 1000,
           secure: true,
         });
-        console.log('workerController:', Token);
 
         return res
             .status(200)
             .json({message: 'worker registration success', Token});
       }
     } catch (error) {
-      console.error('Error during signUp:', error);
       res.status(500).json({message: 'Internal server error'});
     }
   },
@@ -94,12 +93,11 @@ const obj = {
         const checkPass = bcrypt.compareSync(password, existWorker.password);
         if (checkPass) {
           const Token = createToken(existWorker._id);
-          res.cookie('wjwt', Token, {
+          res.cookie('jwt', Token, {
             httponly: true,
             maxAge: maxAge * 1000,
             secure: true,
           });
-          console.log('login Token:', Token);
           return res
               .status(200)
               .json({message: 'worker logged in successfully', Token});
@@ -114,7 +112,6 @@ const obj = {
             .json({message: 'worker not found, try again'});
       }
     } catch (error) {
-      console.error('Error during signUp:', error);
       res.status(500).json({message: 'Internal server error'});
     }
   },
@@ -122,14 +119,13 @@ const obj = {
     try {
       const decodedToken = req.decodedWorkerToken;
       const workerId = decodedToken.id;
-      console.log(workerId);
+
       const existWorker = WorkerDetails.findOne({_id: workerId});
       if (existWorker) {
         return res.status(200).json({message: 'worker is legit'});
       }
       return res.status(404).json({message: 'no worker Found'});
     } catch (error) {
-      console.error('Error during signUp:', error);
       res.status(500).json({message: 'Internal server error'});
     }
   },
@@ -147,14 +143,12 @@ const obj = {
           .json({
             data: workerData, message: 'fetching worker details positive'});
     } catch (err) {
-      console.log('Error decoding token', err);
       res.status(401).json({error: 'invalid or expired token'});
     }
   },
   updateProfile: async (req, res)=>{
     const decodedId = req.decodedWorkerToken;
     const id = decodedId.id;
-    console.log(id);
     const {
       firstName,
       lastName,
@@ -185,7 +179,6 @@ const obj = {
 
       return res.status(200).json(worker);
     } catch (error) {
-      console.error(error);
       res.status(500).json({message: ' Server Error'});
     }
   },
@@ -223,14 +216,12 @@ const obj = {
 
       res.status(200).json({requests: requestsWithUserData});
     } catch (error) {
-      console.error(error);
       res.status(500).json({message: ' Server Error'});
     }
   },
   acceptOrDecline: async (req, res) => {
     const id = req.params.id;
     const action = req.query.action;
-    console.log(action);
     try {
       const request = await WorkRequest.findById({_id: id});
       if (!request) {
@@ -244,7 +235,6 @@ const obj = {
       await request.save();
       res.status(200).json({message: 'Work request updated successfully'});
     } catch (error) {
-      console.error(error);
       res.status(500).json({message: ' Server Error'});
     }
   },
@@ -264,7 +254,6 @@ const obj = {
           .json({message: 'Worker updated successfully',
             isHalfDay: worker.isHalfDay});
     } catch (error) {
-      console.error('Error updating worker:', error);
       res.status(500).json({message: 'Internal server error'});
     }
   },
@@ -284,7 +273,6 @@ const obj = {
           .json({message: 'Worker updated successfully',
             isHalfDay: worker.isHalfDay});
     } catch (error) {
-      console.error('Error updating worker:', error);
       res.status(500).json({message: 'Internal server error'});
     }
   },
@@ -292,16 +280,12 @@ const obj = {
   verifyOTP: async (req, res) => {
     const {otpValues, orderId} = req.body;
     const otp = parseInt(otpValues.join(''), 10);
-    console.log('oooootp', otpValues, otp);
     try {
       const request = await WorkRequest.findOne({_id: orderId});
-      console.log(request);
       if (!request) {
         return res.status(404).json({message: 'not found'});
       }
-      console.log(request.secretcode);
       const secretCodeInt = parseInt(request.secretcode, 10);
-      console.log(secretCodeInt);
       if (secretCodeInt===otp) {
         request.completed=true;
         await request.save();
@@ -314,7 +298,6 @@ const obj = {
             .json({success: false, message: 'incorrect Otp'});
       }
     } catch (error) {
-      console.error('Error updating worker:', error);
       res.status(500).json({message: 'Internal server error'});
     }
   },
