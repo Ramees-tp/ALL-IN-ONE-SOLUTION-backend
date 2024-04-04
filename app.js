@@ -20,10 +20,12 @@ app.use('/worker', workerRouter);
 app.use('/master', adminRoutes);
 
 mongConnect.then(() => {
+  console.log('MongoDB database connected successfully');
   app.listen(port, () => {
     console.log(`server is rinning at http://localhost:${port}`);
   });
 }).catch((error)=>{
   console.log('Error while connecting to mongoDB', error);
+  console.log('MongoDB database is not connected');
   process.exit(1);
 });
