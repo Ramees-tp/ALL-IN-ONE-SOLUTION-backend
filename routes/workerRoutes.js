@@ -23,7 +23,7 @@ router.post('/login', login);
 router.post('/logOut', workerVerifyToken, logOut);
 router.get('/workerProfile', workerVerifyToken, workerProfile);
 router.put('/updateProfile', workerVerifyToken, updateProfile);
-router.get('/workRequest', workRequest);
+router.get('/workRequest', workerVerifyToken, workRequest);
 router.get('/acceptOrDecline/:id', acceptOrDecline);
 router.put('/updateIsHalfDay', workerVerifyToken, updateIsHalfDay);
 router.post('/verifyOTP', verifyOTP);

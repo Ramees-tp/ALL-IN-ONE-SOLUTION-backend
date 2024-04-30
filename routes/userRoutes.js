@@ -24,6 +24,9 @@ const {
   saveMessages,
   showMessage,
   logOut,
+  likedWorker,
+  unLikeWorker,
+  likedList,
 } = require('../controllers/userController');
 
 router.post('/signUp', signUp);
@@ -49,5 +52,9 @@ router.post('/payment', payment);
 router.post('/validatePayment', validatePayment);
 router.post('/saveMessages', saveMessages);
 router.get('/showMessage', showMessage);
+
+router.post('/likedWorker', verifyToken, likedWorker);
+router.delete('/unLikeWorker/:id', verifyToken, unLikeWorker);
+router.get('/likedList', verifyToken, likedList);
 
 module.exports = router;

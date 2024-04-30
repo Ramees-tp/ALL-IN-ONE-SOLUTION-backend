@@ -5,6 +5,8 @@ const AddDetails = require('../models/userMoreDetails');
 const JobForm =require('../models/workSchema');
 const WorkRequest = require('../models/workRequests');
 const MessageSchema = require('../models/messageSchema');
+const LikedWorkers = require('../models/likedWorkers');
+
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 
@@ -523,6 +525,69 @@ const obj = {
     } catch (err) {
       res.status(500)
           .json({success: false, message: 'Internal server error'});
+    }
+  },
+  likedWorker: async (req, res) =>{
+    const {workerId}= req.body;
+    const decodedToken = req.decodedToken;
+    const userId = decodedToken.id;
+    try {
+      const existingLikedWorker = await LikedWorkers.findOne({userId: userId});
+
+      if (existingLikedWorker) {
+        existingLikedWorker.workerId.push(workerId);
+        await existingLikedWorker.save();
+        return res
+            .status(200)
+            .json({success: true, data: existingLikedWorker});
+      } else {
+        const newLikedWorker = new LikedWorkers({
+          userId: userId,
+          workerId: [workerId],
+        });
+        const savedLikedWorker = await newLikedWorker.save();
+        return res.status(200).json({success: true, data: savedLikedWorker});
+      }
+    } catch (err) {
+      res.status(500)
+          .json({success: false, existingLikedWorker,
+            message: 'Internal server error'});
+    }
+  },
+  unLikeWorker: async (req, res) =>{
+    const workerId = new mongoose.Types.ObjectId(req.params.id);
+    const decodedToken = req.decodedToken;
+    const userId = decodedToken.id;
+    try {
+      const existingLikedWorker = await LikedWorkers.findOneAndUpdate(
+          {userId: userId},
+          {$pull: {workerId: workerId}},
+          {new: true},
+      );
+      if (existingLikedWorker) {
+        return res
+            .status(200)
+            .json({success: true, existingLikedWorker,
+              message: 'Worker unliked successfully'});
+      } else {
+        return res
+            .status(404)
+            .json({success: false, message: 'Document not found for the user'});
+      }
+    } catch (err) {
+      res.status(500)
+          .json({success: false, message: 'Internal server error'});
+    }
+  },
+  likedList: async (req, res) =>{
+    const decodedToken = req.decodedToken;
+    const userId = decodedToken.id;
+    try {
+      const ListLiked = await LikedWorkers.find({userId});
+      res.status(200)
+          .json({success: true, data: ListLiked, message: 'data fetched'});
+    } catch (err) {
+      res.status(500).json({success: false, message: 'Internal server error'});
     }
   },
 };

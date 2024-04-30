@@ -15,9 +15,9 @@ app.use(express.json());
 // app.use(cors({origin: ['http://localhost:5173'], credentials: true}));
 app.use(cors({origin: ['http://184.73.25.154'], credentials: true}));
 
-app.use('/user', userRouter);
-app.use('/worker', workerRouter);
-app.use('/master', adminRoutes);
+app.use('/api/user', userRouter);
+app.use('/api/worker', workerRouter);
+app.use('/api/master', adminRoutes);
 
 mongConnect.then(() => {
   console.log('MongoDB database connected successfully');
