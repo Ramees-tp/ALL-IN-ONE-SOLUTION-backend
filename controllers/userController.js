@@ -307,8 +307,6 @@ const obj = {
     const workerId = req.params.id;
     const decodedToken = req.decodedToken;
     const userId = decodedToken.id;
-    console.log(workerId, selectedDate,
-        selectedDay, location, coordinates, id1);
     try {
       const jobType = await JobForm.findOne({_id: id1});
       const wage = jobType.wage;

@@ -37,7 +37,6 @@ const obj = {
       return res.status(400).json({error: 'Invalid file uploaded'});
     }
     const image = req.file.location;
-    console.log('Image uploaded successfully:', image);
     try {
       const existWorker = await WorkerDetails.findOne({email});
       if (existWorker) {

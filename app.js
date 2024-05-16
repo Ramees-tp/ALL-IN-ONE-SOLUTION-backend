@@ -13,7 +13,7 @@ app.use(cookieParser());
 app.use(express.urlencoded({extended: false}));
 app.use(express.json());
 // app.use(cors({origin: ['http://localhost:5173'], credentials: true}));
-app.use(cors({origin: ['http://184.73.25.154'], credentials: true}));
+app.use(cors({origin: ['http://34.207.143.20'], credentials: true}));
 
 app.use('/user', userRouter);
 app.use('/worker', workerRouter);
